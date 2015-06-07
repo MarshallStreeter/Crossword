@@ -1,7 +1,6 @@
 package core;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 
 public class API implements IAPI {
 
@@ -14,19 +13,19 @@ public class API implements IAPI {
 	 * The Words List
 	 */
 	private ArrayList<String> Words;
-	
+
 	/**
 	 * Placed Words Going Right
 	 */
 	private ArrayList<String> PlacedWordsRight;
 	private ArrayList<PlacedWordTracker> TrackWordsRight = new ArrayList<PlacedWordTracker>();
-	
+
 	/**
 	 * Placed Words Going Down
 	 */
 	private ArrayList<String> PlacedWordsDown;
 	private ArrayList<PlacedWordTracker> TrackWordsDown = new ArrayList<PlacedWordTracker>();
-	
+
 	/**
 	 * Helps assign numbers to cells for clues
 	 */
@@ -52,10 +51,10 @@ public class API implements IAPI {
 		Config.NumPuzzlesToGenerate = numPuzzlesToGen;
 
 		Grid = new String[Config.GridRows][Config.GridColumns];
-		
+
 		PlacedWordsRight = new ArrayList<String>();
 		PlacedWordsDown = new ArrayList<String>();
-		
+
 		if(inputSource == 0){
 			Words = new ArrayList<String>(Config.GetFilteredRandomWordsList());
 		}
@@ -141,11 +140,11 @@ public class API implements IAPI {
 		for (int i = 0; i < wp.getLength(); i++) {
 			Grid[r + i][c] = wp.logicalCharAt(i);
 		}
-		
+
 		PlacedWordsDown.add(word);
-		
+
 		int num = GetNumberAtCoordinate(new Coordinate(r,c));
-		
+
 		if(num > 0){
 			TrackWordsDown.add(new PlacedWordTracker(num, new Coordinate(r,c), word));
 		}
@@ -164,11 +163,11 @@ public class API implements IAPI {
 		for (int i = 0; i < wp.getLength(); i++) {
 			Grid[r][c + i] = wp.logicalCharAt(i);
 		}
-		
+
 		PlacedWordsRight.add(word);
-		
+
 		int num = GetNumberAtCoordinate(new Coordinate(r,c));
-		
+
 		if(num > 0){
 			TrackWordsRight.add(new PlacedWordTracker(num, new Coordinate(r,c), word));
 		}
@@ -382,23 +381,23 @@ public class API implements IAPI {
 			}
 		}
 	}
-	
+
 	private int GetNumberAtCoordinate(Coordinate coordinate){
 		for(PlacedWordTracker t : TrackWordsRight){
 			if((t.getCoordinate().getC() == coordinate.getC()) && (t.getCoordinate().getR() == coordinate.getR())) {
 				return t.getNumber();
 			}
 		}
-		
+
 		for(PlacedWordTracker t : TrackWordsDown){
 			if((t.getCoordinate().getC() == coordinate.getC()) && (t.getCoordinate().getR() == coordinate.getR())) {
 				return t.getNumber();
 			}
 		}
-		
+
 		return 0;
 	}
-	
+
 	public String GetCrosswordGridHtml(Boolean generateSolution){
 		StringBuilder sb = new StringBuilder();
 				for (int i = 0; i < Config.GridRows; i++) {
@@ -418,7 +417,7 @@ public class API implements IAPI {
 								else{
 									sb.append("<span class='tile'><span class='sm'>" + num + "</span><span class='ltr'>" + Config.GetBlankCharacter() + "</span></span>");
 								}
-								
+
 							}
 							else {
 								if(generateSolution){
@@ -427,9 +426,9 @@ public class API implements IAPI {
 								else{
 									sb.append("<span class='tile'>" + Config.GetBlankCharacter() + "</span>");
 								}
-								
+
 							}
-							
+
 						} else {
 							sb.append("<span class='blacktile'>" + cell + "</span>");
 						}
@@ -448,12 +447,49 @@ public class API implements IAPI {
 
 		//build grid
 		sb.append(GetCrosswordGridHtml(false));
-		
+
 		//build clues right
 		sb.append("<table id='clueTable'><tr><td valign='top' style='padding-right:40px'>");
 		sb.append("<p><strong>Across Clues</strong></p>");
-		
-		for(PlacedWordTracker t : TrackWordsRight){
+
+		if(Config.InputSource == 0){
+	    Hashtable<String, ArrayList<PlacedWordTracker>> acrossTable = makeTopicsTable(true);
+
+	    Enumeration<String> topics = acrossTable.keys();
+	        while (topics.hasMoreElements()) {
+
+	          String key = topics.nextElement();
+
+	          sb.append("<p>" + key + "</p>");
+
+	          ArrayList<PlacedWordTracker> placedWords = acrossTable.get(key);
+	          for( PlacedWordTracker pwt : placedWords){
+	              BigWord bw = Config.FindBigWordInFilteredBigWords(pwt.getWord());
+	                  if(bw.hasClue()){
+	                      sb.append(pwt.getNumber() + ". "  + bw.getClue() + "<br/>");
+	                  }
+	                  else{
+	                      sb.append(pwt.getNumber() + ". No Clue" + "<br/>");
+	                  }
+
+	          } // end for
+	        } // end while
+
+		}
+		else {
+		    for(PlacedWordTracker t : TrackWordsRight){
+	                String clue = Config.GetClueFromManualWordsList(t.getWord());
+	                if(clue != null){
+	                    sb.append(t.getNumber() + ". "  + clue + "<br/>");
+	                }
+	                else{
+	                    sb.append(t.getNumber() + ". No Clue" + "<br/>");
+	                }
+
+	        }
+		}
+
+		/*for(PlacedWordTracker t : TrackWordsRight){
 			//file
 			if(Config.InputSource == 0){
 				BigWord bw = Config.FindBigWordInFilteredBigWords(t.getWord());
@@ -474,14 +510,51 @@ public class API implements IAPI {
 					sb.append(t.getNumber() + ". No Clue" + "<br/>");
 				}
 			}
-		}
-		
+		}*/
+
 		sb.append("</td><td valign='top'>");
-		
+
 		//build clues down
 		sb.append("<p><strong>Down Clues</strong></p>");
-		
-		for(PlacedWordTracker t : TrackWordsDown){
+
+        if(Config.InputSource == 0){
+        Hashtable<String, ArrayList<PlacedWordTracker>> downTable = makeTopicsTable(false);
+
+        Enumeration<String> topics = downTable.keys();
+            while (topics.hasMoreElements()) {
+
+              String key = topics.nextElement();
+
+              sb.append("<p>" + key + "</p>");
+
+              ArrayList<PlacedWordTracker> placedWords = downTable.get(key);
+              for( PlacedWordTracker pwt : placedWords){
+                  BigWord bw = Config.FindBigWordInFilteredBigWords(pwt.getWord());
+                      if(bw.hasClue()){
+                          sb.append(pwt.getNumber() + ". "  + bw.getClue() + "<br/>");
+                      }
+                      else{
+                          sb.append(pwt.getNumber() + ". No Clue" + "<br/>");
+                      }
+
+              } // end for
+            } // end while
+
+        }
+        else {
+            for(PlacedWordTracker t : TrackWordsDown){
+                    String clue = Config.GetClueFromManualWordsList(t.getWord());
+                    if(clue != null){
+                        sb.append(t.getNumber() + ". "  + clue + "<br/>");
+                    }
+                    else{
+                        sb.append(t.getNumber() + ". No Clue" + "<br/>");
+                    }
+
+            }
+        }
+
+		/*for(PlacedWordTracker t : TrackWordsDown){
 			//file
 			if(Config.InputSource == 0){
 				BigWord bw = Config.FindBigWordInFilteredBigWords(t.getWord());
@@ -502,10 +575,10 @@ public class API implements IAPI {
 					sb.append(t.getNumber() + ". No Clue" + "<br/>");
 				}
 			}
-		}
-		
+		}*/
+
 		sb.append("</td></tr></table>");
-		
+
 		if(includeSolution){
 			sb.append("<div class='theSolutionIsHere'>");
 			sb.append(GetCrosswordGridHtml(true));
@@ -514,4 +587,39 @@ public class API implements IAPI {
 
 		return sb.toString();
 	}
+
+	/**
+    * makeTopicsTable - Method to sort the placed words by topic for clue display
+    */
+	private Hashtable<String, ArrayList<PlacedWordTracker>> makeTopicsTable(Boolean across) {
+
+	    Hashtable<String, ArrayList<PlacedWordTracker>> topicsTable = new Hashtable<String, ArrayList<PlacedWordTracker>>();
+
+	    ArrayList<PlacedWordTracker> trackerList = TrackWordsDown;
+	    if(across)
+	        trackerList = TrackWordsRight;
+
+        for (int i = 0; i < trackerList.size(); i++)
+        {
+            PlacedWordTracker pwt = trackerList.get(i);
+            BigWord big_word = Config.FindBigWordInFilteredBigWords(pwt.getWord());
+            String topic_str = big_word.getTopic();
+
+            boolean exists = topicsTable.containsKey(topic_str);
+
+            if (exists) {
+                ArrayList<PlacedWordTracker> temp = topicsTable.get(topic_str);
+                temp.add(pwt);
+                topicsTable.put(topic_str, temp);
+            }
+            else {
+                ArrayList<PlacedWordTracker> temp = new ArrayList<PlacedWordTracker>();
+                temp.add(pwt);
+                topicsTable.put(topic_str, temp);
+            }
+        }
+
+	    return topicsTable; // Return the hashtable
+	}
+
 }
