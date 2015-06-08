@@ -460,7 +460,7 @@ public class API implements IAPI {
 
 	          String key = topics.nextElement();
 
-	          sb.append("<p>" + key + "</p>");
+	          sb.append("<div class='clueTopicsDisplay'><p>" + key + "</p></div>");
 
 	          ArrayList<PlacedWordTracker> placedWords = acrossTable.get(key);
 	          for( PlacedWordTracker pwt : placedWords){
@@ -525,7 +525,7 @@ public class API implements IAPI {
 
               String key = topics.nextElement();
 
-              sb.append("<p>" + key + "</p>");
+              sb.append("<div class='clueTopicsDisplay'><p>" + key + "</p></div>");
 
               ArrayList<PlacedWordTracker> placedWords = downTable.get(key);
               for( PlacedWordTracker pwt : placedWords){
